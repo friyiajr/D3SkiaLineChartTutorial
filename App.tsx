@@ -2,17 +2,19 @@ import React from 'react';
 
 import {
   Canvas,
+  Line,
   Path,
   runTiming,
   Skia,
   SkPath,
   useComputedValue,
   useValue,
+  vec,
 } from '@shopify/react-native-skia';
 
 import {animatedData, DataPoint, originalData} from './Data';
 import {curveBasis, line, scaleLinear, scaleTime} from 'd3';
-import {Button, Easing} from 'react-native';
+import {Easing, View, Pressable, Text, StyleSheet} from 'react-native';
 
 interface GraphData {
   min: number;
@@ -28,7 +30,7 @@ const App = () => {
   });
 
   const GRAPH_HEIGHT = 400;
-  const GRAPH_WIDTH = 400;
+  const GRAPH_WIDTH = 360;
 
   const makeGraph = (data: DataPoint[]): GraphData => {
     const max = Math.max(...data.map(val => val.value));
@@ -53,9 +55,9 @@ const App = () => {
     };
   };
 
-  const transitionStart = () => {
+  const transitionStart = (end: number) => {
     state.current = {
-      current: state.current.next,
+      current: end,
       next: state.current.current,
     };
     transition.current = 0;
@@ -70,17 +72,74 @@ const App = () => {
   const path = useComputedValue(() => {
     const start = graphData[state.current.current].curve;
     const end = graphData[state.current.next].curve;
-    return start.interpolate(end, transition.current);
+    const result = start.interpolate(end, transition.current);
+    return result?.toSVGString() ?? '0';
   }, [state, transition]);
 
   return (
-    <>
-      <Canvas style={{width: GRAPH_WIDTH, height: GRAPH_HEIGHT}}>
-        <Path style="stroke" path={path} strokeWidth={2} />
+    <View style={styles.container}>
+      <Canvas
+        style={{
+          width: GRAPH_WIDTH,
+          height: GRAPH_HEIGHT,
+        }}>
+        <Line
+          p1={vec(10, 130)}
+          p2={vec(400, 130)}
+          color="lightgrey"
+          style="stroke"
+          strokeWidth={1}
+        />
+        <Line
+          p1={vec(10, 250)}
+          p2={vec(400, 250)}
+          color="lightgrey"
+          style="stroke"
+          strokeWidth={1}
+        />
+        <Line
+          p1={vec(10, 370)}
+          p2={vec(400, 370)}
+          color="lightgrey"
+          style="stroke"
+          strokeWidth={1}
+        />
+        <Path style="stroke" path={path} strokeWidth={4} color="#6231ff" />
       </Canvas>
-      <Button title="Press Here" onPress={transitionStart} />
-    </>
+      <View style={styles.buttonContainer}>
+        <Pressable
+          onPress={() => transitionStart(0)}
+          style={styles.buttonStyle}>
+          <Text style={styles.textStyle}>Graph 1</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => transitionStart(1)}
+          style={styles.buttonStyle}>
+          <Text style={styles.textStyle}>Graph 2</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+  },
+  buttonStyle: {
+    marginRight: 20,
+    backgroundColor: '#6231ff',
+    paddingVertical: 5,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  textStyle: {
+    color: 'white',
+    fontSize: 20,
+  },
+});
 
 export default App;
